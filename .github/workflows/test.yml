@@ -13,3 +13,12 @@ jobs:
         with:
           node-version: 20
       - run: npm test
+name: Keep Render Alive
+on:
+  schedule:
+    - cron: '*/14 * * * *'
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -sf https://med-route-coderush.onrender.com || true
