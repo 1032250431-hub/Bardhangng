@@ -22,6 +22,12 @@ MED-ROUTE is an interactive routing and dispatch simulation for rural healthcare
 
 Shortest-path complexity: **O((V + E) log V)** with a binary min heap. Priority queue insert/remove are O(log n).
 
+## Scale Lab
+
+The deployed UI includes a real, measured browser stress lab. It generates **50,000 nodes and 200,000 weighted edges**, runs three real Dijkstra searches using a binary heap, and drains **5,000 synthetic emergency queue arrivals**. The benchmark executes inside a Web Worker so the command center remains interactive while the stress graph is built and searched.
+
+Benchmark results are measured on the judge's browser at runtime rather than hard-coded.
+
 ## Live UI
 
 The UI is driven by the actual `core-engine.js` implementation — no hard-coded routing result is used. It demonstrates:
@@ -32,9 +38,9 @@ The UI is driven by the actual `core-engine.js` implementation — no hard-coded
 - Ambulance fleet state.
 - Decision timeline with routing rationale.
 - Road closure simulation.
-- Benchmark / engine observatory.
+- Real 50k-node / 200k-edge scale benchmark.
 - Resource-depletion and fleet-exhaustion edge-case lab.
-- Responsive desktop/mobile layout.
+- Responsive desktop/mobile layout with a reduced mobile rendering budget.
 
 ## Edge cases demonstrated
 
@@ -44,6 +50,7 @@ The UI is driven by the actual `core-engine.js` implementation — no hard-coded
 - All ambulances occupied (`QUEUED_NO_AMBULANCE`).
 - Blocked road edges.
 - Invalid start/specialty handling in the engine.
+- Large graph stress under a separate Web Worker.
 
 ## Testing
 
@@ -66,6 +73,13 @@ createHealthcareEngine()
        |
        v
 Route + Telemetry + Decision Log
+
+Scale Lab (Web Worker)
+       |
+       +-- 50,000 nodes
+       +-- 200,000 weighted edges
+       +-- 3 real Dijkstra runs
+       +-- 5,000 queue arrivals
 ```
 
 The competition asks for a working application focused on the routing problem rather than a complete hospital-management system; this project therefore keeps the scope centered on routing, allocation, dispatch, resources and resilience.
