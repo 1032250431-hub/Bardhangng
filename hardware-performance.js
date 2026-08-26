@@ -6,6 +6,7 @@ const state={worker:null,canvas:null,fps:60,gpuMs:0,dpr:Math.max(window.devicePi
 function inject(){if(document.getElementById('mr-hardware-performance-css'))return;const s=document.createElement('style');s.id='mr-hardware-performance-css';s.textContent=`
 .mr-hw-layer{position:fixed;inset:0;width:100vw;height:100vh;display:block;pointer-events:none;z-index:31;transform:translateZ(0);will-change:transform;contain:strict}
 .mr-hw-offscreen{content-visibility:auto;contain-intrinsic-size:900px}
+.section{contain:content}.footer{content-visibility:auto;contain-intrinsic-size:320px}
 #heroMap,#map,#workmap,.leaflet-pane,.leaflet-overlay-pane,.leaflet-marker-pane,.leaflet-tile-pane{transform:translateZ(0)}
 #heroMap,#map,#workmap{will-change:transform}
 .route-glow,.mr-route-path,.mr-route-dot,.mr-radar-ring{will-change:transform,opacity}
