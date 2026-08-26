@@ -6,7 +6,7 @@ const boot=()=>{
   const $=id=>document.getElementById(id);
   const worker=new Worker('/route-worker.js');
   let pendingResolve=null;
-  worker.onmessage=e=>{if(e.data?.type==='k-shortest'&&pendingResolve){pendingResolve(e.data.paths);pendingResolve=null}if(e.data?.type==='error'&&pendingResolve){pendingResolve([]);pendingResolve=null}};
+  worker.onmessage=e=>{if((e.data?.type==='k-shortest'||e.data?.type==='k-shortest-result')&&pendingResolve){pendingResolve(e.data.paths||[]);pendingResolve=null}if(e.data?.type==='error'&&pendingResolve){pendingResolve([]);pendingResolve=null}};
   const compute=({start,target,k=3})=>new Promise(resolve=>{pendingResolve=resolve;const graph={};engine.graph.forEach((edges,node)=>{graph[node]=edges.filter(e=>!e.blocked).map(e=>({to:e.to,w:e.travelTime}))});worker.postMessage({type:'k-shortest',graph,start,target,k})});
   const button=$('mrAlternatives');
   if(button)button.onclick=async()=>{
