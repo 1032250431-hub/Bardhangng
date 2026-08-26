@@ -1,0 +1,1 @@
+(()=>{const register=()=>{if(!('serviceWorker' in navigator))return;navigator.serviceWorker.register('/sw.js',{scope:'/'}).then(()=>{document.documentElement.classList.add('pwa-ready')}).catch(()=>{});};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',register,{once:true});else register()})();
