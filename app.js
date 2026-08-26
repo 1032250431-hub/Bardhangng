@@ -2,7 +2,6 @@ const engine=createHealthcareEngine();
 const $=id=>document.getElementById(id);
 let map,workmap,routeLayer,originLayer,ambulanceMarker,closureLayer,activeClosure=null;
 const villages=engine.nodes.filter(n=>n.type==='VILLAGE');
-
 function clock(){ $('clock').textContent=new Date().toLocaleTimeString('en-GB'); }
 setInterval(clock,1000); clock();
 function edgeCount(){let n=0;engine.graph.forEach(e=>n+=e.length);return Math.round(n/2)}
@@ -23,4 +22,4 @@ function resetFleet(){engine.ambulances.forEach(a=>a.status='IDLE');clearVisuals
 $('enterCommand').addEventListener('click',()=>document.querySelector('#command').scrollIntoView({behavior:'smooth'}));$('dispatch').addEventListener('click',dispatch);$('closure').addEventListener('click',closure);$('resetFleet').addEventListener('click',resetFleet);$('clear').addEventListener('click',()=>$('log').innerHTML='');
 window.addEventListener('load',()=>{initMap();hospitalUI();fleetUI();refreshSpecialties();log('Network initialized. 500 nodes loaded.','success');log('Waiting for incoming emergency request.');if(window.gsap)gsap.from('.reveal',{y:34,opacity:0,duration:1,stagger:.09,ease:'power3.out',delay:.15})});
 window.addEventListener('resize',()=>{if(map)map.invalidateSize();if(workmap)workmap.invalidateSize()});
-window.addEventListener('load',()=>{const s=document.createElement('script');s.src='/architecture-pass.js?v=20260826b';s.defer=true;document.head.appendChild(s)},{once:true});
+window.addEventListener('load',()=>{const architecture=document.createElement('script');architecture.src='/architecture-pass.js?v=20260826b';architecture.onload=()=>{const hooks=document.createElement('script');hooks.src='/architecture-hooks.js?v=20260826b';hooks.defer=true;document.head.appendChild(hooks)};architecture.defer=true;document.head.appendChild(architecture)},{once:true});
