@@ -1,0 +1,14 @@
+/* MED-ROUTE ScrollExpand — vanilla adaptation of the ScrollExpand interaction. */
+.mr-scroll-expand{position:relative;z-index:5;min-height:190vh;padding:10vh 4vw 14vh;background:#050a0d;overflow:hidden}
+.mr-scroll-expand__stage{position:sticky;top:0;height:100vh;display:grid;place-items:center;overflow:hidden}
+.mr-scroll-expand__frame{position:relative;width:min(78vw,1180px);height:min(68vh,700px);overflow:hidden;border:1px solid rgba(220,245,244,.12);background:#071014;box-shadow:0 50px 150px rgba(0,0,0,.52);transform-origin:center center;will-change:width,height,border-radius,transform}
+.mr-scroll-expand__media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;transform:scale(1);will-change:transform}
+.mr-scroll-expand__scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,10,13,.04),rgba(5,10,13,.18) 45%,rgba(5,10,13,.78));pointer-events:none}
+.mr-scroll-expand__title{position:absolute;left:clamp(24px,5vw,72px);bottom:clamp(26px,6vh,70px);max-width:760px;z-index:2;will-change:opacity,transform}
+.mr-scroll-expand__eyebrow{font:9px 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#65e6e2;text-transform:uppercase;margin-bottom:12px}
+.mr-scroll-expand__heading{margin:0;font:500 clamp(34px,6vw,86px)/.9 'Space Grotesk',sans-serif;letter-spacing:-.055em;color:#eef7f6}
+.mr-scroll-expand__hint{position:absolute;right:28px;top:28px;z-index:2;font:8px 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#b7f36b;display:flex;align-items:center;gap:9px;will-change:opacity}
+.mr-scroll-expand__hint i{width:6px;height:6px;border-radius:50%;background:#b7f36b;box-shadow:0 0 14px rgba(183,243,107,.65)}
+.mr-scroll-expand__caption{position:absolute;left:4vw;bottom:4vh;z-index:3;font:8px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#5f7477;opacity:0;transform:translateY(8px);pointer-events:none}
+@media(max-width:768px){.mr-scroll-expand{min-height:155vh;padding-left:0;padding-right:0}.mr-scroll-expand__frame{width:92vw;height:62vh}.mr-scroll-expand__title{left:24px;right:24px}.mr-scroll-expand__hint{right:20px;top:20px}.mr-scroll-expand__heading{letter-spacing:-.025em}}
+@media(prefers-reduced-motion:reduce){.mr-scroll-expand{min-height:auto;padding:60px 4vw}.mr-scroll-expand__stage{position:relative;height:auto}.mr-scroll-expand__frame{width:100%!important;height:min(65vh,650px)!important}.mr-scroll-expand__media{transform:none!important}.mr-scroll-expand__title,.mr-scroll-expand__hint{opacity:1!important;transform:none!important}.mr-scroll-expand__caption{display:none}}
