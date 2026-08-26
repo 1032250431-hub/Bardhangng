@@ -1,0 +1,1 @@
+(()=>{const boot=()=>{const b=document.getElementById('demoBtn'),m=document.querySelector('.judge-modal');if(b&&m){b.textContent='JUDGE SCENARIOS';b.onclick=()=>m.classList.add('open')}};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else setTimeout(boot,0)})();
