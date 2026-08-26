@@ -1,1 +1,1 @@
-.mr-strands{position:absolute;inset:auto 0 0;height:32vh;pointer-events:none;z-index:1;opacity:.72;mask-image:linear-gradient(to top,black,transparent 88%);-webkit-mask-image:linear-gradient(to top,black,transparent 88%)}.mr-strands-canvas{display:block;width:100%;height:100%;mix-blend-mode:screen}.hero>*{position:relative;z-index:2}@media(max-width:768px){.mr-strands{height:22vh;opacity:.5}}
+/* Disabled: the previous strand overlay duplicated hero typography on narrow/mobile layouts. */
