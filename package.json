@@ -1,1 +1,1 @@
-{"name":"med-route-command","version":"1.0.0","private":true,"scripts":{"start":"node server.js"},"engines":{"node":">=18"}}
+{"name":"med-route-command","version":"1.0.0","private":true,"scripts":{"start":"node server.js","test":"node test-engine.js"},"engines":{"node":">=18"}}
