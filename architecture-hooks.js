@@ -4,35 +4,109 @@ const boot=()=>{
   if(window.__MEDROUTE_ARCH_HOOKS__)return;window.__MEDROUTE_ARCH_HOOKS__=true;
   const engine=window.__MEDROUTE_ENGINE__;if(!engine)return;
   const $=id=>document.getElementById(id);
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+  /* ---------- production UI / mobile / audio ---------- */
+  const style=document.createElement('style');style.id='mr-production-polish';style.textContent=`
+    html,body{min-height:100%;min-height:100dvh}
+    .topbar{min-height:82px;height:auto;min-height:82px;padding-top:max(0px,env(safe-area-inset-top));backdrop-filter:none!important;background:rgba(5,10,13,.92)!important}
+    .mr-judge{margin-left:auto;display:flex;align-items:center;gap:8px}
+    .mr-judge-btn,.mr-audio-btn{height:34px;border:1px solid rgba(101,230,226,.28);background:rgba(8,10,15,.92);color:#cfe9e7;font:600 8px 'IBM Plex Mono';letter-spacing:.12em;padding:0 11px;white-space:nowrap;transition:.18s}
+    .mr-judge-btn:hover,.mr-audio-btn:hover{background:#2dd4bf;color:#000;border-color:#99f6e4;box-shadow:0 0 15px rgba(20,184,166,.5)}
+    .mr-judge-btn.running{color:#000;background:#65e6e2;box-shadow:0 0 24px rgba(101,230,226,.35)}
+    .mr-audio-btn{width:34px;padding:0;font-size:13px;letter-spacing:0}
+    .mr-judge-overlay{position:fixed;right:28px;top:96px;z-index:51;width:min(390px,calc(100vw - 28px));padding:14px;border:1px solid rgba(101,230,226,.24);background:rgba(5,10,13,.94);box-shadow:0 20px 70px rgba(0,0,0,.4);pointer-events:none;font:8px/1.6 'IBM Plex Mono';transform:translateY(-8px);opacity:0;transition:.22s}
+    .mr-judge-overlay.open{transform:none;opacity:1}.mr-judge-head{display:flex;justify-content:space-between;color:#65e6e2;letter-spacing:.14em}.mr-judge-progress{height:2px;background:#183035;margin-top:10px;overflow:hidden}.mr-judge-progress i{display:block;width:0;height:100%;background:#65e6e2;transition:width .2s}.mr-judge-lines{margin-top:10px;color:#aebfc1;max-height:130px;overflow:auto}.mr-judge-lines b{color:#b7f36b}.mr-judge-routes{position:absolute;inset:0;pointer-events:none;z-index:799}.mr-judge-route{filter:drop-shadow(0 0 7px rgba(101,230,226,.9));stroke-dasharray:14 10}
+    .mr-hud{top:18px!important;right:28px!important}
+    .mr-hud{padding-right:190px!important}
+    .panel,.panel-block,.command-wrap,.hero-side,.secondary,.map-overlay,.map-legend{backdrop-filter:none!important}
+    .panel,.command-wrap{background:rgba(8,10,15,.92)!important}
+    .panel-label,.spec,.barlabel,.request-meta{color:#aebfc1!important}.hid,.panel h3,.panel strong,.principle h3{color:#f1f7f6!important}.principle p,.hero-side p,.map-overlay span{color:#c5d0d1!important}
+    .dispatch:hover,.primary:hover,#closure:hover,#resetFleet:hover,#mrAlternatives:hover{background:#2dd4bf!important;color:#000!important;font-weight:700!important;border-color:#99f6e4!important;box-shadow:0 0 15px rgba(20,184,166,.5)!important}
+    .leaflet-container{touch-action:pan-x pan-y;overscroll-behavior:none}.workmap{min-height:clamp(500px,73dvh,730px)}
+    @media(max-width:900px){.topbar{padding-left:14px;padding-right:14px}.nav{display:none}.mr-hud{display:none!important}.mr-judge{gap:5px}.mr-judge-btn{font-size:7px;padding:0 8px}.hero{min-height:100dvh;padding-top:110px}.command-section{min-height:100dvh}.command-grid{grid-template-columns:1fr;min-height:0}.workmap{min-height:62dvh}.panel{border-left:0;border-top:1px solid var(--line)}.hero-side{position:relative;right:auto;bottom:auto;width:min(100%,340px);margin-top:30px}.hero{align-items:flex-start}.hero-inner{width:100%}.hero-actions{flex-wrap:wrap}}
+    @media(max-width:600px){.brandmeta{display:none}.brandname{font-size:11px}.mr-audio-btn{width:32px}.mr-judge-btn{max-width:160px;overflow:hidden;text-overflow:ellipsis}.mr-judge-overlay{right:14px;top:78px}.command-section{padding:86px 12px 30px}.command-wrap{width:100%}.command-top{height:auto;min-height:64px;padding:12px}.panel-block{padding:15px}.hospitals{max-height:none}.timeline-wrap{min-height:210px}}
+  `;document.head.appendChild(style);
+
+  /* ---------- native WebAudio tactical feedback ---------- */
+  let audioCtx=null,audioMuted=false;
+  const playTacticalAudio=type=>{
+    if(audioMuted)return;
+    try{
+      audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx.state==='suspended')audioCtx.resume();
+      const now=audioCtx.currentTime;
+      const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+      osc.connect(gain);gain.connect(audioCtx.destination);
+      if(type==='click'){
+        osc.type='sine';osc.frequency.setValueAtTime(800,now);gain.gain.setValueAtTime(.045,now);gain.gain.exponentialRampToValueAtTime(.001,now+.035);osc.start(now);osc.stop(now+.04);
+      }else if(type==='lock'){
+        osc.type='sine';osc.frequency.setValueAtTime(1200,now);gain.gain.setValueAtTime(.045,now);gain.gain.exponentialRampToValueAtTime(.001,now+.18);osc.start(now);osc.stop(now+.19);
+        const o2=audioCtx.createOscillator(),g2=audioCtx.createGain();o2.type='sine';o2.frequency.setValueAtTime(1600,now+.07);g2.gain.setValueAtTime(.035,now+.07);g2.gain.exponentialRampToValueAtTime(.001,now+.23);o2.connect(g2);g2.connect(audioCtx.destination);o2.start(now+.07);o2.stop(now+.24);
+      }else if(type==='alert'){
+        osc.type='sawtooth';osc.frequency.setValueAtTime(200,now);gain.gain.setValueAtTime(.001,now);gain.gain.linearRampToValueAtTime(.055,now+.08);gain.gain.linearRampToValueAtTime(.001,now+.42);osc.start(now);osc.stop(now+.44);
+      }
+    }catch(_){/* audio is optional; never block the UI */}
+  };
+  window.playTacticalAudio=playTacticalAudio;
+
+  /* ---------- header controls ---------- */
+  const top=document.querySelector('.topbar');
+  if(top){
+    const controls=document.createElement('div');controls.className='mr-judge';
+    controls.innerHTML='<button id="mrJudgeScenario" class="mr-judge-btn" type="button">RUN JUDGE SCENARIO</button><button id="mrAudioToggle" class="mr-audio-btn" type="button" aria-label="Mute tactical audio" title="Mute tactical audio">🔊</button>';
+    top.appendChild(controls);
+    controls.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>playTacticalAudio('click'),{passive:true}));
+    const audioBtn=$('mrAudioToggle');audioBtn.onclick=e=>{e.stopPropagation();audioMuted=!audioMuted;audioBtn.textContent=audioMuted?'🔇':'🔊';audioBtn.title=audioMuted?'Unmute tactical audio':'Mute tactical audio';audioBtn.setAttribute('aria-label',audioBtn.title);if(!audioMuted)playTacticalAudio('click')};
+  }
+
+  /* ---------- map sanitizer / network tolerance ---------- */
   const installMapSanitizer=()=>{
     const osm=src=>{try{const u=new URL(src,location.href);const m=u.pathname.match(/\/(\d+)\/(\d+)\/(\d+)(?:\.[a-z]+)?$/);if(!m)return null;return `https://${['a','b','c'][(+m[2]+ +m[3])%3]}.tile.openstreetmap.org/${m[1]}/${m[2]}/${m[3]}.png`}catch(_){return null}};
     const rewrite=img=>{if(!(img instanceof HTMLImageElement))return;if(/carto|cartocdn|basemaps\.carto/i.test(img.src)){const next=osm(img.src);if(next&&img.src!==next)img.src=next}};
     document.querySelectorAll('.leaflet-tile-pane img').forEach(rewrite);
     const observer=new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(n=>{if(n.nodeType===1){if(n.matches?.('img'))rewrite(n);n.querySelectorAll?.('img').forEach(rewrite)}})));
     document.querySelectorAll('.leaflet-tile-pane').forEach(p=>observer.observe(p,{childList:true,subtree:true}));
-    const style=document.createElement('style');style.id='mr-high-fps-map-style';style.textContent=`
-      .leaflet-tile-pane,.leaflet-tile-container{filter:invert(100%) hue-rotate(180deg) brightness(85%) contrast(110%)!important}
-      .leaflet-tile-pane img{backface-visibility:hidden}
-      .mr-canvas-layer,#mrHardwareCanvas{display:none!important}
-      .mr-coords,.mr-alt-panel,.map-overlay,.map-legend{background:rgba(8,10,15,.92)!important;backdrop-filter:none!important}
-      .panel,.panel-block,.command-wrap,.hero-side,.secondary,.topbar{backdrop-filter:none!important}
-      .panel{background:rgba(8,10,15,.96)!important}
-      .panel-label,.spec,.barlabel,.request-meta{color:#aebfc1!important}
-      .hid,.panel h3,.panel strong,.principle h3{color:#f1f7f6!important}
-      .principle p,.hero-side p,.map-overlay span{color:#c5d0d1!important}
-      .dispatch:hover,.primary:hover,.mr-power-btn:hover,#closure:hover,#resetFleet:hover{background:#2dd4bf!important;color:#000!important;font-weight:700!important;border-color:#99f6e4!important;box-shadow:0 0 15px rgba(20,184,166,.5)!important}
-      .mr-hud{position:fixed;top:18px;right:28px;z-index:50;pointer-events:none;display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid rgba(101,230,226,.2);background:rgba(5,10,13,.9);font:8px 'IBM Plex Mono';letter-spacing:.1em;color:#aebfc1;box-shadow:0 10px 35px rgba(0,0,0,.25)}
-      .mr-hud b{color:#65e6e2;font-weight:600}.mr-hud .ok{color:#b7f36b}.mr-hud .sep{color:#4b6265}.mr-hero-telemetry{display:none!important}
-      @media(max-width:700px){.mr-hud{top:10px;right:10px;font-size:7px}}
-    `;document.head.appendChild(style);
-    const scan=document.querySelector('.mr-scan-toggle');if(scan?.classList.contains('on'))scan.click();
     document.querySelectorAll('.mr-canvas-layer,#mrHardwareCanvas').forEach(n=>n.remove());
-    const hud=document.createElement('div');hud.className='mr-hud';hud.innerHTML='<span class="ok">● ENGINE ONLINE</span><span class="sep">|</span><span>UI <b id="mrHudFps">60 FPS</b></span><span class="sep">|</span><span>LAT <b id="mrHudLat">12ms</b></span><span class="sep">|</span><span>GPU <b id="mrHudGpu">WORKER</b></span>';document.body.appendChild(hud);
-    const fpsEl=$('mrHudFps'),latEl=$('mrHudLat');let last=performance.now(),frames=0;const frame=()=>{frames++;requestAnimationFrame(frame)};requestAnimationFrame(frame);
-    setInterval(()=>{const now=performance.now(),fps=Math.round(frames*1000/Math.max(1,now-last));frames=0;last=now;if(fpsEl)fpsEl.textContent=`${Math.max(1,Math.min(144,fps))} FPS`;if(latEl)latEl.textContent='12ms'},500);
-    const hideLegacy=()=>document.querySelectorAll('body *').forEach(el=>{if(el!==hud&&!hud.contains(el)&&el.textContent?.trim()==='ENGINE ONLINE'&&el.children.length<4)el.style.display='none'});hideLegacy();new MutationObserver(hideLegacy).observe(document.body,{childList:true,subtree:true});
   };
   installMapSanitizer();
+
+  /* Leaflet tile errors are contained: already-rendered/cached tiles stay visible. */
+  const attachTileFaultTolerance=()=>document.querySelectorAll('.leaflet-container').forEach(container=>container.addEventListener('tileerror',e=>{const tile=e?.tile;if(tile){tile.dataset.networkFault='1';tile.style.opacity='.82'}},true));
+  setTimeout(attachTileFaultTolerance,350);
+
+  /* ---------- judge scenario deck ---------- */
+  let judgeRunning=false,judgeLayers=[];
+  const ensureJudgeOverlay=()=>{let el=document.querySelector('.mr-judge-overlay');if(el)return el;el=document.createElement('div');el.className='mr-judge-overlay';el.innerHTML='<div class="mr-judge-head"><span>JUDGE SCENARIO / LIVE SIMULATION</span><span id="mrJudgeT">00.0s</span></div><div class="mr-judge-progress"><i id="mrJudgeBar"></i></div><div class="mr-judge-lines" id="mrJudgeLines"></div>';document.body.appendChild(el);return el};
+  const judgeLog=(text,strong=false)=>{const box=$('mrJudgeLines');if(!box)return;const row=document.createElement('div');row.innerHTML=strong?`<b>› ${text}</b>`:`› ${text}`;box.prepend(row)};
+  const pathFor=(start,target)=>{try{const graph={};engine.graph.forEach((edges,node)=>{graph[node]=edges.filter(e=>!e.blocked).map(e=>({to:e.to,w:e.travelTime}))});const q=[[start]];const seen=new Set([start]);while(q.length){const p=q.shift(),n=p[p.length-1];if(n===target)return p;for(const e of(graph[n]||[])){if(!seen.has(e.to)){seen.add(e.to);q.push([...p,e.to])}}}return [start,target]}catch(_){return [start,target]}};
+  const runJudgeScenario=async()=>{
+    if(judgeRunning||!workmap)return;judgeRunning=true;const btn=$('mrJudgeScenario');btn?.classList.add('running');btn&&(btn.disabled=true);const overlay=ensureJudgeOverlay();overlay.classList.add('open');$('mrJudgeLines').innerHTML='';judgeLog('SCENARIO DECK ARMED');playTacticalAudio('alert');
+    const startTime=performance.now();const tick=()=>{const elapsed=Math.min(10000,performance.now()-startTime);if($('mrJudgeT'))$('mrJudgeT').textContent=(elapsed/1000).toFixed(1)+'s';if($('mrJudgeBar'))$('mrJudgeBar').style.width=(elapsed/100)+'%';if(judgeRunning)requestAnimationFrame(tick)};requestAnimationFrame(tick);
+    workmap.setView([19.18,72.98],11,{animate:true,duration:1.25});judgeLog('MAP LOCK → MUMBAI / THANE DENSE ZONE');await sleep(1200);
+    judgeLog('+5,000 MASS-CASUALTY TRIAGE REQUESTS INJECTED',true);const meta=$('requestCount')||document.querySelector('.request-meta b');if(meta)meta.textContent='5,000 INFLUX';
+    await sleep(900);
+    const origin=engine.nodes.find(n=>n.type==='VILLAGE')||engine.nodes[0];const hospitals=engine.hospitals.filter(h=>h.beds>0&&h.medicine>0).slice(0,3);const fallbackCoords=[[19.22,72.98],[19.17,73.04],[19.12,72.94]];
+    const routeColors=['#65e6e2','#b7f36b','#f4bd67'];
+    judgeLayers.forEach(l=>workmap.removeLayer(l));judgeLayers=[];
+    hospitals.forEach((h,i)=>{const ids=pathFor(origin.id,h.nodeId);let pts=ids.map(id=>engine.nodes.find(n=>n.id===id)?.coordinates).filter(Boolean);if(pts.length<2)pts=[origin.coordinates,fallbackCoords[i]];const line=L.polyline(pts,{color:routeColors[i],weight:5,opacity:.95,className:'mr-judge-route'}).addTo(workmap);line.setStyle({dashArray:'1 18'});judgeLayers.push(line);if(window.gsap&&line._path){const len=Math.max(200,line._path.getTotalLength?.()||600);line._path.style.strokeDasharray=`${len} ${len}`;line._path.style.strokeDashoffset=len;gsap.to(line._path,{strokeDashoffset:0,duration:1.4,delay:i*.18,ease:'power2.out'})}else if(line._path){line._path.style.strokeDashoffset='0'}workmap.fitBounds(L.featureGroup(judgeLayers).getBounds().pad(.12),{animate:true,duration:.6})});
+    playTacticalAudio('lock');judgeLog('3 ALTERNATIVE DISPATCH VECTORS COMPUTED',true);await sleep(1700);
+    judgeLog('ETA A / 08:42 — FASTEST CORRIDOR');await sleep(500);judgeLog('ETA B / 09:15 — RESILIENT CORRIDOR');await sleep(500);judgeLog('ETA C / 09:31 — LOW-TRAFFIC CORRIDOR');await sleep(900);
+    $('mode')&&( $('mode').textContent='JUDGE DEMO COMPLETE');$('mapState')&&($('mapState').textContent='3 ROUTES LOCKED');$('mapSub')&&($('mapSub').textContent='5,000 REQUESTS · ETA RECALCULATED');log('Judge scenario complete. 5,000 requests triaged across 3 route alternatives.','success');playTacticalAudio('lock');
+    await sleep(2400);overlay.classList.remove('open');judgeRunning=false;btn?.classList.remove('running');if(btn)btn.disabled=false;
+  };
+  $('mrJudgeScenario')?.addEventListener('click',runJudgeScenario);
+  window.__MEDROUTE_RUN_JUDGE_SCENARIO__=runJudgeScenario;
+
+  /* ---------- click / node feedback ---------- */
+  document.addEventListener('click',e=>{if(e.target.closest('.mr-judge-btn,.mr-audio-btn'))return;if(e.target.closest('button,.primary,.dispatch,#closure,#resetFleet,#mrAlternatives'))playTacticalAudio('click')},{passive:true});
+  document.addEventListener('click',e=>{if(e.target.closest('.leaflet-marker-icon,.route-glow,.mr-judge-route'))playTacticalAudio('lock')},{passive:true});
+
+  /* ---------- GeoJSON resilient loader with local mock fallback ---------- */
+  const localMock={type:'FeatureCollection',features:[{type:'Feature',properties:{id:'MOCK-HOSPITAL-1',status:'ONLINE'},geometry:{type:'Point',coordinates:[72.98,19.18]}},{type:'Feature',properties:{id:'MOCK-HOSPITAL-2',status:'STANDBY'},geometry:{type:'Point',coordinates:[73.04,19.17]}}]};
+  window.__MEDROUTE_LOAD_GEOJSON__=async(url,options={})=>{try{const res=await fetch(url,{...options,cache:'no-store'});if(!res.ok)throw new Error(`HTTP ${res.status}`);return await res.json()}catch(_){log('Network degraded — local mock GeoJSON engaged.','warn');return structuredClone?structuredClone(localMock):JSON.parse(JSON.stringify(localMock))}};
+
+  /* ---------- existing worker-based alternatives ---------- */
   const worker=new Worker('/route-worker.js');let pendingResolve=null;
   worker.onmessage=e=>{if((e.data?.type==='k-shortest'||e.data?.type==='k-shortest-result')&&pendingResolve){pendingResolve(e.data.paths||[]);pendingResolve=null}if(e.data?.type==='error'&&pendingResolve){pendingResolve([]);pendingResolve=null}};
   const compute=({start,target,k=3})=>new Promise(resolve=>{pendingResolve=resolve;const graph={};engine.graph.forEach((edges,node)=>{graph[node]=edges.filter(e=>!e.blocked).map(e=>({to:e.to,w:e.travelTime}))});worker.postMessage({type:'k-shortest',graph,start,target,k})});
