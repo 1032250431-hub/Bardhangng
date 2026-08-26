@@ -18,19 +18,18 @@ uniform float uIntensity;
 float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 void main(){
   vec2 p=vUv-.5; p.x*=uResolution.x/max(uResolution.y,1.0);
-  float r=length(p);
   float angle=atan(p.y,p.x);
   float sweep=pow(max(0.0,cos(angle-uTime*.75)),28.0);
-  float rings=smoothstep(.012,.0,abs(fract(r*7.0-uTime*.18)-.5)-.47);
   float gridX=1.0-smoothstep(.0,.018,abs(fract(vUv.x*42.0)-.5));
   float gridY=1.0-smoothstep(.0,.018,abs(fract(vUv.y*24.0)-.5));
-  float noise=hash(vUv* uResolution + uTime)*.018;
+  float noise=hash(vUv*uResolution+uTime)*.018;
+  float r=length(p);
   float vignette=1.0-smoothstep(.18,.76,r);
   vec3 cyan=vec3(.11,.92,.86);
   vec3 indigo=vec3(.18,.25,.8);
-  vec3 c=cyan*(sweep*.11+rings*.035)+indigo*(gridX+gridY)*.004;
+  vec3 c=cyan*(sweep*.11)+indigo*(gridX+gridY)*.004;
   c+=noise;
-  float a=(sweep*.075+rings*.035+(gridX+gridY)*.002)*vignette*uIntensity;
+  float a=(sweep*.075+(gridX+gridY)*.002)*vignette*uIntensity;
   outColor=vec4(c,a);
 }`;
 
