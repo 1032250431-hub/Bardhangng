@@ -1,11 +1,16 @@
-name: MED-ROUTE tests
+name: MED-ROUTE CI
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '*/14 * * * *'
+
 jobs:
   engine:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -13,12 +18,10 @@ jobs:
         with:
           node-version: 20
       - run: npm test
-name: Keep Render Alive
-on:
-  schedule:
-    - cron: '*/14 * * * *'
-jobs:
-  ping:
+
+  keep_render_alive:
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
-      - run: curl -sf https://med-route-coderush.onrender.com || true
+      - name: Ping Render
+        run: curl -sf https://med-route-coderush.onrender.com || true
