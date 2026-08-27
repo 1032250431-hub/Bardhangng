@@ -26,4 +26,5 @@ const http=require('http');const fs=require('fs');const path=require('path');con
 <script src="/blur-text-pass.js?v=1"></script>
 <script src="/glass-surface-pass.js?v=1"></script>
 <script src="/command-center-runtime-fix.js?v=1"></script>
+<script src="/route-visual-fix.js?v=1"></script>
 `;let html=data.toString().replace('<section class="hero">','<section class="hero"><div class="mr-strands" data-strands aria-hidden="true"></div>');body=Buffer.from(html.replace('</head>',head+'</head>').replace('</body>',inject+'</body>'))}res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(body)})});server.listen(port,'0.0.0.0',()=>console.log(`MED-ROUTE listening on ${port}`));
