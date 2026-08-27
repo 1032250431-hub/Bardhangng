@@ -84,3 +84,89 @@ const boot=()=>{if(repair())return;let attempts=0;const timer=setInterval(()=>{a
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 window.addEventListener('load',repair,{once:true});
 })();
+
+/* Map recovery: only initializes a Leaflet map when the page failed to do so.
+   Existing Leaflet instances and routing overlays are left untouched. */
+(()=>{
+  'use strict';
+  if(window.__MEDROUTE_MAP_RECOVERY__)return;
+  window.__MEDROUTE_MAP_RECOVERY__=true;
+
+  const css=()=>{
+    if(document.getElementById('mr-map-recovery-style'))return;
+    const s=document.createElement('style');
+    s.id='mr-map-recovery-style';
+    s.textContent=`
+      .mapwork,.workmap{position:relative!important;min-height:720px!important;background:#071014!important;overflow:hidden!important}
+      .mapwork #workMap,.mapwork #workmap,.workmap #workMap,.workmap #workmap{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:100%!important;z-index:1!important;display:block!important;visibility:visible!important;opacity:1!important}
+      .mapbg #heroMap{width:100%!important;height:100%!important;display:block!important;visibility:visible!important}
+      .leaflet-container{width:100%!important;height:100%!important;background:#071014!important}
+      @media(max-width:900px){.mapwork,.workmap{min-height:58vh!important}}
+      @media(max-width:560px){.mapwork,.workmap{min-height:60vh!important}}
+    `;
+    document.head.appendChild(s);
+  };
+
+  const targets=[
+    {ids:['workMap','workmap'],center:[23.35,85.33],zoom:8},
+    {ids:['heroMap'],center:[23.35,85.33],zoom:8}
+  ];
+
+  const find=idList=>idList.map(id=>document.getElementById(id)).find(Boolean);
+  const ensure=()=>{
+    css();
+    if(!window.L)return false;
+    let touched=false;
+    targets.forEach(spec=>{
+      const el=find(spec.ids);
+      if(!el)return;
+      try{
+        let map=el.__mrMapInstance;
+        if(!map&&el._leaflet_id){
+          // A map exists but the owning script did not expose it.
+          el.__mrMapInstance=null;
+          map=null;
+        }
+        if(!el._leaflet_id){
+          map=L.map(el,{zoomControl:true,attributionControl:true,preferCanvas:true});
+          map.setView(spec.center,spec.zoom);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+            maxZoom:19,
+            attribution:'&copy; OpenStreetMap contributors'
+          }).addTo(map);
+          el.__mrMapInstance=map;
+          touched=true;
+        }
+        const existing=el.__mrMapInstance;
+        if(existing&&typeof existing.invalidateSize==='function'){
+          setTimeout(()=>existing.invalidateSize(false),50);
+          setTimeout(()=>existing.invalidateSize(false),500);
+        }
+      }catch(error){
+        console.warn('[MED-ROUTE] map recovery skipped',error);
+      }
+    });
+    return touched||targets.some(spec=>find(spec.ids)?._leaflet_id);
+  };
+
+  const boot=()=>{
+    let attempts=0;
+    const run=()=>{
+      attempts++;
+      const done=ensure();
+      if(done||attempts>=30)clearInterval(timer);
+    };
+    const timer=setInterval(run,250);
+    run();
+    window.addEventListener('resize',()=>{
+      targets.forEach(spec=>{
+        const el=find(spec.ids);
+        const map=el&&el.__mrMapInstance;
+        if(map&&typeof map.invalidateSize==='function')map.invalidateSize(false);
+      });
+    },{passive:true});
+  };
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  window.addEventListener('load',ensure,{once:true});
+})();
